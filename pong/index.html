@@ -6,36 +6,31 @@
   <title>lenka pong</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #05060f; }
     canvas { display: block; }
   </style>
 </head>
 <body>
 <canvas id="c"></canvas>
 <script>
-  // ── CONFIG — keep in sync with ../index.html ──
-  const IMAGES = [
-    '../images/dvirbride.png',
-    '../images/dvirkiss.png',
-    // '../images/nextimage.png',
-  ];
+  // ── CONFIG ────────────────────────────────────
+  const PLAYER_IMG = '../images/dvirbride.png';
 
   // ── constants ─────────────────────────────────
-  const PW         = 55;   // paddle width  (px)
-  const PH         = 115;  // paddle height (px)
-  const BR         = 10;   // ball radius   (px)
-  const BALL_SPEED = 5.5;
-  const AI_SPEED   = 4.2;
+  const PW         = 14;    // AI paddle width  (px)
+  const PH         = 100;   // paddle height (px)
+  const IMG_W      = 55;    // player image width
+  const IMG_H      = 115;   // player image height
+  const BR         = 9;     // ball radius   (px)
+  const BALL_SPEED = 3.5;
+  const AI_SPEED   = 2.6;
 
   // ── setup ─────────────────────────────────────
   const canvas = document.getElementById('c');
   const ctx    = canvas.getContext('2d');
 
-  const imgs = IMAGES.map(src => {
-    const i = new Image();
-    i.src = src;
-    return i;
-  });
+  const playerImg = new Image();
+  playerImg.src = PLAYER_IMG;
 
   let W, H;
   let state;           // 'waiting' | 'playing' | 'scored'
@@ -49,9 +44,11 @@
     H = canvas.height = window.innerHeight;
   }
 
+  // AI is left, player is right
   function lx() { return 20; }
-  function rx() { return W - 20 - PW; }
-  function clamp(y) { return Math.max(0, Math.min(H - PH, y)); }
+  function rx() { return W - 20 - IMG_W; }
+  function clampAI(y)     { return Math.max(0, Math.min(H - PH, y)); }
+  function clampPlayer(y) { return Math.max(0, Math.min(H - IMG_H, y)); }
 
   function newBall(goRight = true) {
     const angle = (Math.random() * 0.8 - 0.4);
@@ -65,7 +62,7 @@
 
   function resetGame() {
     leftY  = H / 2 - PH / 2;
-    rightY = H / 2 - PH / 2;
+    rightY = H / 2 - IMG_H / 2;
     scoreL = 0;
     scoreR = 0;
     newBall(true);
@@ -79,14 +76,15 @@
   });
   window.addEventListener('keyup', e => { keys[e.key] = false; });
 
+  // mouse controls RIGHT (player) paddle
   window.addEventListener('mousemove', e => {
-    if (state === 'playing') leftY = clamp(e.clientY - PH / 2);
+    if (state === 'playing') rightY = clampPlayer(e.clientY - IMG_H / 2);
   });
 
   window.addEventListener('touchmove', e => {
     e.preventDefault();
     for (const t of e.touches) {
-      if (t.clientX < W / 2) leftY = clamp(t.clientY - PH / 2);
+      rightY = clampPlayer(t.clientY - IMG_H / 2);
     }
   }, { passive: false });
 
@@ -100,24 +98,24 @@
   function update() {
     if (state !== 'playing') return;
 
-    // keyboard paddle
-    if (keys['ArrowUp']   || keys['w'] || keys['W']) leftY = clamp(leftY - 7);
-    if (keys['ArrowDown'] || keys['s'] || keys['S']) leftY = clamp(leftY + 7);
+    // keyboard — player is on the RIGHT
+    if (keys['ArrowUp']   || keys['w'] || keys['W']) rightY = clampPlayer(rightY - 7);
+    if (keys['ArrowDown'] || keys['s'] || keys['S']) rightY = clampPlayer(rightY + 7);
 
-    // AI paddle — tracks ball with speed cap + tiny error band
+    // AI on the LEFT — tracks ball with speed cap
     const aiTarget = ball.y - PH / 2;
-    const diff = aiTarget - rightY;
-    rightY = clamp(rightY + Math.sign(diff) * Math.min(Math.abs(diff), AI_SPEED));
+    const diff = aiTarget - leftY;
+    leftY = clampAI(leftY + Math.sign(diff) * Math.min(Math.abs(diff), AI_SPEED));
 
     // move ball
     ball.x += ball.vx;
     ball.y += ball.vy;
 
-    // top / bottom
+    // top / bottom walls
     if (ball.y - BR <= 0)  { ball.y = BR;     ball.vy =  Math.abs(ball.vy); }
     if (ball.y + BR >= H)  { ball.y = H - BR; ball.vy = -Math.abs(ball.vy); }
 
-    // left paddle hit
+    // left paddle hit (AI — plain rect)
     if (
       ball.vx < 0 &&
       ball.x - BR <= lx() + PW &&
@@ -126,24 +124,24 @@
       ball.y - BR <= leftY + PH
     ) {
       ball.x = lx() + PW + BR;
-      const rel   = (ball.y - (leftY  + PH / 2)) / (PH / 2);
-      const spd   = Math.min(Math.hypot(ball.vx, ball.vy) + 0.3, 18);
+      const rel   = (ball.y - (leftY + PH / 2)) / (PH / 2);
+      const spd   = Math.min(Math.hypot(ball.vx, ball.vy) + 0.2, 14);
       const angle = rel * 0.85;
       ball.vx =  spd * Math.cos(angle);
       ball.vy =  spd * Math.sin(angle);
     }
 
-    // right paddle hit
+    // right paddle hit (player — image)
     if (
       ball.vx > 0 &&
       ball.x + BR >= rx() &&
-      ball.x - BR <= rx() + PW &&
+      ball.x - BR <= rx() + IMG_W &&
       ball.y + BR >= rightY &&
-      ball.y - BR <= rightY + PH
+      ball.y - BR <= rightY + IMG_H
     ) {
       ball.x = rx() - BR;
-      const rel   = (ball.y - (rightY + PH / 2)) / (PH / 2);
-      const spd   = Math.min(Math.hypot(ball.vx, ball.vy) + 0.3, 18);
+      const rel   = (ball.y - (rightY + IMG_H / 2)) / (IMG_H / 2);
+      const spd   = Math.min(Math.hypot(ball.vx, ball.vy) + 0.2, 14);
       const angle = rel * 0.85;
       ball.vx = -spd * Math.cos(angle);
       ball.vy =  spd * Math.sin(angle);
@@ -151,11 +149,11 @@
 
     // scoring
     if (ball.x < -BR * 2) {
-      scoreR++;
+      scoreR++;          // AI missed → player (right) scores
       scored(false);
     }
     if (ball.x > W + BR * 2) {
-      scoreL++;
+      scoreL++;          // player missed → AI (left) scores
       scored(true);
     }
   }
@@ -166,31 +164,46 @@
   }
 
   // ── draw ──────────────────────────────────────
-  function drawPaddle(imgIdx, x, y, mirror) {
-    const img = imgs[imgIdx] ?? imgs[0];
-    if (img?.naturalWidth) {
+  function drawAIPaddle(x, y) {
+    // glowing white rect
+    ctx.save();
+    ctx.shadowColor = 'rgba(180,200,255,0.7)';
+    ctx.shadowBlur  = 14;
+    ctx.fillStyle   = 'rgba(210,220,255,0.9)';
+    ctx.beginPath();
+    ctx.roundRect(x, y, PW, PH, 4);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawPlayerPaddle(x, y) {
+    if (playerImg.naturalWidth) {
       ctx.save();
-      if (mirror) {
-        ctx.translate(x + PW, 0);
-        ctx.scale(-1, 1);
-        ctx.drawImage(img, 0, y, PW, PH);
-      } else {
-        ctx.drawImage(img, x, y, PW, PH);
-      }
+      ctx.shadowColor = 'rgba(255,255,255,0.35)';
+      ctx.shadowBlur  = 18;
+      // mirror so it faces left (inward)
+      ctx.translate(x + IMG_W, 0);
+      ctx.scale(-1, 1);
+      ctx.drawImage(playerImg, 0, y, IMG_W, IMG_H);
       ctx.restore();
     } else {
       ctx.fillStyle = '#fff';
-      ctx.fillRect(x, y, PW, PH);
+      ctx.fillRect(x, y, IMG_W, IMG_H);
     }
   }
 
   function draw() {
-    ctx.clearRect(0, 0, W, H);
+    // dark background with very subtle gradient
+    const grad = ctx.createLinearGradient(0, 0, W, H);
+    grad.addColorStop(0, '#05060f');
+    grad.addColorStop(1, '#0b0d1a');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
 
     // centre line
     ctx.save();
-    ctx.setLineDash([8, 14]);
-    ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+    ctx.setLineDash([6, 16]);
+    ctx.strokeStyle = 'rgba(255,255,255,0.07)';
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(W / 2, 0);
@@ -198,27 +211,31 @@
     ctx.stroke();
     ctx.restore();
 
-    // paddles — each image faces inward (right paddle mirrored)
-    drawPaddle(0, lx(), leftY,  false);
-    drawPaddle(Math.min(1, imgs.length - 1), rx(), rightY, true);
+    // paddles
+    drawAIPaddle(lx(), leftY);
+    drawPlayerPaddle(rx(), rightY);
 
-    // ball
+    // ball with glow
+    ctx.save();
+    ctx.shadowColor = 'rgba(255,255,255,0.9)';
+    ctx.shadowBlur  = 22;
     ctx.beginPath();
     ctx.arc(ball.x, ball.y, BR, 0, Math.PI * 2);
     ctx.fillStyle = '#fff';
     ctx.fill();
+    ctx.restore();
 
-    // score
-    ctx.font = 'bold 26px monospace';
-    ctx.fillStyle = 'rgba(255,255,255,0.45)';
+    // score — AI on left, player on right
+    ctx.font = 'bold 28px monospace';
     ctx.textAlign = 'center';
-    ctx.fillText(`${scoreL}  —  ${scoreR}`, W / 2, 42);
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.fillText(`${scoreL}  —  ${scoreR}`, W / 2, 46);
 
-    // start / intermission hint
+    // start hint
     if (state === 'waiting') {
-      ctx.font = '12px monospace';
-      ctx.fillStyle = 'rgba(255,255,255,0.2)';
-      ctx.fillText('press any key · tap to start', W / 2, H / 2 + PH);
+      ctx.font = '13px monospace';
+      ctx.fillStyle = 'rgba(255,255,255,0.22)';
+      ctx.fillText('move mouse · arrow keys · tap to start', W / 2, H / 2 + IMG_H);
     }
   }
 

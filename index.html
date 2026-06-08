@@ -229,7 +229,10 @@
   // ── live viewer counter ──────────────────────
   {
     const counterEl = document.getElementById('counter');
-    let current = Math.floor(Math.random() * 18) + 4; // start 4–21
+    // seed on 3-minute bucket so refresh gives same starting number
+    const bucket  = Math.floor(Date.now() / (3 * 60 * 1000));
+    const seeded  = s => { const x = Math.sin(s) * 10000; return x - Math.floor(x); };
+    let current   = Math.floor(seeded(bucket) * 18) + 4; // stable 4–21 within bucket
 
     function render() {
       counterEl.textContent = `● ${current} viewing now`;

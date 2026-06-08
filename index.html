@@ -25,19 +25,42 @@
       width: 100%;
       text-align: center;
       font: 0.65rem/1 'Courier New', monospace;
-      color: rgba(255,255,255,0.6);
+      color: rgba(255,255,255,0.66);
       letter-spacing: 0.12em;
       pointer-events: none;
       user-select: none;
     }
-    @keyframes pulse { 0%,100%{opacity:.6} 50%{opacity:.85} }
+    @keyframes pulse { 0%,100%{opacity:.66} 50%{opacity:.88} }
     #counter { animation: pulse 3s ease-in-out infinite; }
+    #pong-link {
+      position: fixed;
+      bottom: 3rem;
+      width: 100%;
+      text-align: center;
+      font: 0.7rem/1 'Courier New', monospace;
+      letter-spacing: 0.18em;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 1.2s ease;
+    }
+    #pong-link.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    #pong-link a {
+      color: rgba(255,255,255,0.75);
+      text-decoration: none;
+    }
+    #pong-link a:hover { color: #fff; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.4} }
+    #pong-link.visible { animation: blink 1.6s ease-in-out 3; }
   </style>
 </head>
 <body>
 
 <canvas id="confetti"></canvas>
 <div id="counter"></div>
+<div id="pong-link"><a href="/pong">▶ /pong</a></div>
 <img id="img" src="dvirbride.png" draggable="false">
 
 <script>
@@ -89,8 +112,8 @@
   function start() {
     x  = (window.innerWidth  - img.offsetWidth)  * 0.3;
     y  = (window.innerHeight - img.offsetHeight) * 0.2;
-    dx = 3.2;
-    dy = 2.5;
+    dx = 1;
+    dy = 1;
     applyColor(color);
     requestAnimationFrame(tick);
   }
@@ -169,8 +192,9 @@
       applyColor(color);
 
       if (hitX && hitY) {
-        // corner hit — confetti from center of image
+        // corner hit — confetti + unlock pong
         burst(x + img.offsetWidth / 2, y + img.offsetHeight / 2);
+        unlock();
       }
     }
 
@@ -180,6 +204,28 @@
     drawParticles();
     requestAnimationFrame(tick);
   }
+  // ── pong unlock ──────────────────────────────
+  const pongLink = document.getElementById('pong-link');
+  let unlocked = false;
+
+  function unlock() {
+    if (unlocked) return;
+    unlocked = true;
+    pongLink.classList.add('visible');
+  }
+
+  // Konami code: ↑↑↓↓←→←→BA
+  const KONAMI = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];
+  let konamiPos = 0;
+  window.addEventListener('keydown', e => {
+    if (e.key === KONAMI[konamiPos]) {
+      konamiPos++;
+      if (konamiPos === KONAMI.length) { unlock(); konamiPos = 0; }
+    } else {
+      konamiPos = e.key === KONAMI[0] ? 1 : 0;
+    }
+  });
+
   // ── live viewer counter ──────────────────────
   {
     const counterEl = document.getElementById('counter');

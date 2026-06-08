@@ -28,7 +28,7 @@
 
 <script>
   // ── CONFIG ───────────────────────────────────
-  const IMAGES = ['dvirbride.png'];
+  const IMAGES = ['images/dvirbride.png'];
 
   const img    = document.getElementById('img');
   img.src      = IMAGES[Math.floor(Math.random() * IMAGES.length)];
@@ -72,15 +72,20 @@
   resize();
   window.addEventListener('resize', resize);
 
-  img.onload = () => {
+  function start() {
     x  = (window.innerWidth  - img.offsetWidth)  * 0.3;
     y  = (window.innerHeight - img.offsetHeight) * 0.2;
     dx = 3.2;
     dy = 2.5;
     applyColor(color);
     requestAnimationFrame(tick);
-  };
-  if (img.complete && img.naturalWidth) img.onload();
+  }
+
+  if (img.complete && img.naturalWidth) {
+    start();
+  } else {
+    img.onload = start;
+  }
 
   // ── confetti particles ────────────────────────
   const particles = [];

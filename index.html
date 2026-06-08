@@ -19,11 +19,23 @@
       inset: 0;
       pointer-events: none;
     }
+    #counter {
+      position: fixed;
+      bottom: 1.2rem;
+      width: 100%;
+      text-align: center;
+      font: 0.65rem/1 'Courier New', monospace;
+      color: rgba(255,255,255,0.22);
+      letter-spacing: 0.12em;
+      pointer-events: none;
+      user-select: none;
+    }
   </style>
 </head>
 <body>
 
 <canvas id="confetti"></canvas>
+<div id="counter"></div>
 <img id="img" src="dvirbride.png" draggable="false">
 
 <script>
@@ -165,6 +177,23 @@
 
     drawParticles();
     requestAnimationFrame(tick);
+  }
+  // ── visitor counter ──────────────────────────
+  {
+    const DAY         = Math.floor(Date.now() / 86400000);
+    const LAUNCH_DAY  = 20089; // 2025-01-01
+    const daysSince   = Math.max(0, DAY - LAUNCH_DAY);
+    const seeded      = s => { const x = Math.sin(s + 1) * 10000; return x - Math.floor(x); };
+    const target      = 1337 + daysSince * 47 + Math.floor(seeded(DAY) * 30);
+
+    const counterEl = document.getElementById('counter');
+    const t0 = performance.now();
+    (function countUp(now) {
+      const pct    = Math.min((now - t0) / 1500, 1);
+      const eased  = 1 - Math.pow(1 - pct, 3);
+      counterEl.textContent = Math.floor(eased * target).toLocaleString() + ' visitors';
+      if (pct < 1) requestAnimationFrame(countUp);
+    })(t0);
   }
 </script>
 </body>

@@ -66,10 +66,8 @@
 
 <script>
   // ── CONFIG ───────────────────────────────────
-  const IMAGES = ['images/dvirbride.png', 'images/dvirkiss.png'];
-
-  const img    = document.getElementById('img');
-  img.src      = IMAGES[Math.floor(Math.random() * IMAGES.length)];
+  const img = document.getElementById('img');
+  img.src   = 'images/dvirbride.png';
   const canvas = document.getElementById('confetti');
   const ctx    = canvas.getContext('2d');
 
@@ -199,8 +197,9 @@
       }
     }
 
-    img.style.left = x + 'px';
-    img.style.top  = y + 'px';
+    img.style.left      = x + 'px';
+    img.style.top       = y + 'px';
+    img.style.transform = dx < 0 ? 'scaleX(-1)' : 'scaleX(1)';
 
     drawParticles();
     requestAnimationFrame(tick);

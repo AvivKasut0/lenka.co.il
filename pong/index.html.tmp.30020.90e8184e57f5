@@ -7,7 +7,7 @@
   <link rel="icon" href="../images/dvirbride.png">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #05060f; }
     canvas { display: block; }
   </style>
 </head>
@@ -117,7 +117,7 @@
     ball.y += ball.vy;
 
     // spin proportional to speed
-    ball.rot += Math.hypot(ball.vx, ball.vy) * 0.012;
+    ball.rot += Math.hypot(ball.vx, ball.vy) * 0.04;
 
     // top / bottom walls
     if (ball.y - BR <= 0)  { ball.y = BR;     ball.vy =  Math.abs(ball.vy); }
@@ -212,8 +212,8 @@
 
   function draw() {
     const grad = ctx.createLinearGradient(0, 0, W, H);
-    grad.addColorStop(0, '#000000');
-    grad.addColorStop(1, '#0a0010');
+    grad.addColorStop(0, '#05060f');
+    grad.addColorStop(1, '#0b0d1a');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, W, H);
 
@@ -233,13 +233,13 @@
     drawBall();
 
     // score
-    ctx.font = 'bold 56px monospace';
+    ctx.font = 'bold 42px monospace';
     ctx.textAlign = 'center';
     ctx.fillStyle = 'rgba(255,255,255,0.4)';
-    ctx.fillText(`${scoreL}  —  ${scoreR}`, W / 2, 74);
+    ctx.fillText(`${scoreL}  —  ${scoreR}`, W / 2, 62);
 
     if (state === 'waiting') {
-      ctx.font = '22px monospace';
+      ctx.font = '18px monospace';
       ctx.fillStyle = 'rgba(255,255,255,0.22)';
       ctx.fillText('move mouse · arrow keys · tap to start', W / 2, H / 2 + PLAYER_H);
     }
